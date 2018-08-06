@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>Express movies</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../public/style.css">
+  </head>
+  <body>
+      <% include ./partials/header %>
+    
+    <h1>Express list of movies</h1>
+    <ul class='movies'>
+      <% for (movie of movies) { %>
+      <li>
+        <%= movie.title %> (<%= movie.year %>)
+      </li>
+      <% } %>
+    </ul>
+    <br>
+    <form action="/movies" method="post">
+      <input type="text" name='title' id='t' placeholder='title'>
+      <input type="number" name='year' id='y' placeholder='year'>
+      <button type="submit">Ajouter</button>
+    </form>
+
+    <% include ./partials/footer %>
+    <script>
+      const form = document.querySelector('form')
+      form.addEventListener('submit', addMovie)
+      function addMovie(e) {
+        e.preventDefault()
+        if (!window.fetch) {
+          fetch('/movies', {
+            method: 'POST',
+            body: new FormData(form)
+          })
+          .then(checkStatus)
+          .catch(err => console.log(err))
+        } else {
+          var xhr = new XMLHttpRequest()
+          xhr.open('POST', '/movies', true) // true is for async fct
+          xhr.setRequestHeader('content-type', 'application/x-www-form-urlencoded')
+          xhr.onreadystatechange = function() {
+            if (xhr.readyState == XMLHttpRequest.DONE && xhr.status == 200) {
+              form.reset()
+            }
+          }
+          var title = document.getElementById('t').value
+          var year = document.getElementById('y').value
+          var payload = 'title=' + title + '&year=' + year
+          xhr.send(payload)
+        }
+      }
+      const checkStatus = res => {
+        if (res.status >= 200 && res.status < 300) {
+          let item = document.createElement('li')
+          const title = document.getElementById('t').value
+          const year = document.getElementById('y').value
+          item.innerHTML = `${title} (${year})`
+          document.querySelector('.movies').appendChild(item)
+          form.reset()
+        }
+      }
+    </script>
+  </body>
+</html>
