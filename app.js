@@ -6,6 +6,7 @@ const upload = multer()
 const jwt = require('jsonwebtoken')
 const expressJwt = require('express-jwt')
 const mongoose = require('mongoose')
+const faker = require('faker')
 
 mongoose.connect('mongodb://kevin:Xxrv2ayn@ds111072.mlab.com:11072/expressmovies')
 const db = mongoose.connection
@@ -14,6 +15,14 @@ db.once('open', () => {
   console.log('connected !!!!')
 })
 
+const moviesSchema = mongoose.Schema({
+  movietitle: String,
+  movieyear: Number
+})
+
+const Movie = mongoose.model('Movie', moviesSchema)
+
+
 const PORT = 3000 
 const secret = 'qsdjS12ozehdoIJ123DJOZJLDSCqsdeffdg123ER56SDFZedhWXojqshduzaohduihqsDAqsdq'
 
@@ -21,7 +30,7 @@ let films = []
 
 app.use('/public', express.static('public'))
 const urlencodedParser = bodyParser.urlencoded({ extended: false })
-app.use(expressJwt({ secret: secret }).unless({ path: ['/', '/movies', '/s', '/login'] }))
+// app.use(expressJwt({ secret: secret }).unless({ path: ['/', '/movies', '/s', '/login'] }))
 
 app.set('views', './views')
 app.set('view engine', 'ejs')
@@ -40,9 +49,15 @@ app.post('/movies', upload.fields([]), (req, res) => {
   if (req.body) {
     const data = req.body
     console.log('res', data)
-    const newFilm = {title: req.body.title, year: req.body.year}
-    films = [...films, newFilm]
-    return res.sendStatus(201)
+    const myMovie = new Movie({movietitle: req.body.title, movieyear: req.body.year})
+    myMovie.save((err, savedMovie) => {
+      if (err) {
+        console.log(err)
+      } else {
+        console.log(savedMovie)
+        return res.sendStatus(201)
+      }
+    })
   } else {
     return res.sendStatus(500)
   }
