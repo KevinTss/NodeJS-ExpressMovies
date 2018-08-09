@@ -7,8 +7,9 @@ const jwt = require('jsonwebtoken')
 const expressJwt = require('express-jwt')
 const mongoose = require('mongoose')
 const faker = require('faker')
+const config = require('./config')
 
-mongoose.connect('mongodb://kevin:Xxrv2ayn@ds111072.mlab.com:11072/expressmovies')
+mongoose.connect(`mongodb://${config.db.user}:${config.db.password}@ds111072.mlab.com:11072/expressmovies`)
 const db = mongoose.connection
 db.on('error', console.error.bind(console, 'connection failed gros'))
 db.once('open', () => {
@@ -29,15 +30,25 @@ const secret = 'qsdjS12ozehdoIJ123DJOZJLDSCqsdeffdg123ER56SDFZedhWXojqshduzaohdu
 let films = []
 
 app.use('/public', express.static('public'))
+const jsonParser = bodyParser.json()
 const urlencodedParser = bodyParser.urlencoded({ extended: false })
-// app.use(expressJwt({ secret: secret }).unless({ path: ['/', '/movies', '/s', '/login'] }))
+app.use(expressJwt({ secret: secret }).unless({ path: ['/', '/movies', '/s', '/login', new RegExp('/movies.*/', 'i')] }))
 
 app.set('views', './views')
 app.set('view engine', 'ejs')
 
 
 app.get('/movies', (req, res) => {
-  res.render('movies', {movies: films})
+
+  Movie.find((err, movies) => {
+    if (err) {
+      console.log('error finding movies')
+      res.sendStatus(500)
+    } else {
+      films = movies
+      res.render('movies', {movies: films})
+    }
+  })
 })
 // app.post('/movies', urlencodedParser, (req, res) => {
 //   const newFilm = {title: req.body.title, year: req.body.year}
@@ -48,13 +59,11 @@ app.get('/movies', (req, res) => {
 app.post('/movies', upload.fields([]), (req, res) => {
   if (req.body) {
     const data = req.body
-    console.log('res', data)
     const myMovie = new Movie({movietitle: req.body.title, movieyear: req.body.year})
     myMovie.save((err, savedMovie) => {
       if (err) {
         console.log(err)
       } else {
-        console.log(savedMovie)
         return res.sendStatus(201)
       }
     })
@@ -62,13 +71,32 @@ app.post('/movies', upload.fields([]), (req, res) => {
     return res.sendStatus(500)
   }
 })
-app.get('/movies/add', (req, res) => {
-  res.send(`add a movie`)
-})
 app.get('/movies/:id', (req, res) => {
   const id = req.params.id
-  res.render(`movie-details`, {movieId: id})
+  Movie.findById(id, (err, movie) => {
+    if (err) {
+      res.sendStatus(404)
+    } else {
+      res.render(`movie-details`, {movie: movie})
+    }
+  })
 })
+
+app.post('/movies/:id', upload.fields([]), (req, res) => {
+  if (req.body) {
+    const id = req.params.id
+    Movie.findByIdAndUpdate(id, {$set: {movietitle: req.body.movietitle, movieyaer: req.body.movieyear}}, {new: true}, (err, movie) => {
+      if (err) {
+        console.log('err', err)
+        return res.send('Not udpate sorry')
+      } 
+      res.redirect('/movies')
+    })
+  } else {
+    return res.sendStatus(500)
+  }
+})
+
 app.get('/s', (req, res) => {
   res.render('s')
 })

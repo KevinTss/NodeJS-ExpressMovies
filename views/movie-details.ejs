@@ -7,12 +7,19 @@
     <link rel="stylesheet" href="../public/style.css">
   </head>
   <body>
-    
+    <% include ./partials/header %>
+
     <h1>Express details movie</h1>
     
     <p>
-      blablabla details du film <%= movieId %>
+      blablabla details du film <%= movie._id %>
     </p>
+
+    <form method="post">
+      <input type="text" name="title" id="t" value="<%= movie.movietitle %>">
+      <input type="text" name="year" id="y" value="<%= movie.movieyear %>">
+      <button type="submit">Update</button>
+    </form>
 
     <% include ./partials/footer %>
   </body>
